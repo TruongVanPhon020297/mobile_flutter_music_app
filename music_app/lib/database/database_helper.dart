@@ -4,17 +4,7 @@ import 'package:sqflite/sqflite.dart' as sql;
 
 class DatabaseHelper {
   static Future<void> createTables(sql.Database database) async {
-    await database.execute("""
-      CREATE TABLE songs(
-        id INTEGER PRIMARY KEY, 
-        songTitle TEXT,
-        preview TEXT,
-        artistName TEXT,
-        pictureSmall TEXT,
-        pictureMedium TEXT,
-        pictureBig TEXT,
-      )
-      """);
+    await database.execute("CREATE TABLE songs(id INTEGER PRIMARY KEY,songTitle TEXT,preview TEXT,artistName TEXT,pictureSmall TEXT,pictureMedium TEXT,pictureBig TEXT)");
   }
 
   static Future<sql.Database> db() async {
@@ -27,7 +17,7 @@ class DatabaseHelper {
     );
   }
 
-  static Future<void> insertTrack(Song song) async {
+  Future<void> insertTrack(Song song) async {
     final db = await DatabaseHelper.db();
     await db.insert(
       'songs',
@@ -39,7 +29,7 @@ class DatabaseHelper {
 
   }
 
-  static Future<List<Song>> getAllTrack() async {
+  Future<List<Song>> getAllSongDatabase() async {
     final db = await DatabaseHelper.db();
     final List<Map<String, dynamic>> maps = await db.query('songs');
 

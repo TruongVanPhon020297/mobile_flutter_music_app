@@ -127,7 +127,7 @@ class NavigatorBottom extends StatelessWidget {
                       ],
                     ) :
                     StreamBuilder<SequenceState?>(
-                      stream: audioPlayerProvider.audioPlayer?.sequenceStateStream,
+                      stream: audioPlayerProvider.audioHelper.player?.sequenceStateStream,
                       builder: (context,AsyncSnapshot<SequenceState?> snapshot) {
 
                         if(snapshot.hasData) {
@@ -188,7 +188,7 @@ class NavigatorBottom extends StatelessWidget {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
-                                  ControlButtonHomePage(audioPlayerProvider.audioPlayer!)
+                                  ControlButtonHomePage(audioPlayerProvider.audioHelper.player!)
                                 ],
                               )
                             ],

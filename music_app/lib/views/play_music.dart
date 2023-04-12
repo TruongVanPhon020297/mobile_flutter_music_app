@@ -1,16 +1,17 @@
 import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:music_app/provider/download_provider.dart';
 import 'package:music_app/views/play_list_page.dart';
 import 'package:provider/provider.dart';
 
 import '../model/position_data.dart';
+import '../model/song.dart';
 import '../provider/audio_player_provider.dart';
 import '../provider/play_list_current_provider.dart';
 import '../provider/play_list_page_provider.dart';
+import '../provider/play_music_page_provider.dart';
 import 'justautio/control_button_play_music_page.dart';
 import 'justautio/seek_bar.dart';
 
@@ -31,6 +32,27 @@ class _PlayMusicState extends State<PlayMusic> {
 
   bool play = false;
 
+  PlayMusicPageProvider? playMusicPageProvider;
+
+  @override
+  void initState() {
+    super.initState();
+
+    playMusicPageProvider = Provider.of<PlayMusicPageProvider>(context,listen: false);
+
+    IsolateNameServer.registerPortWithName(playMusicPageProvider!.downloadHelper.port.sendPort, 'downloader_send_port');
+
+    playMusicPageProvider!.downloadHelper.registerCallback();
+  }
+
+
+  @override
+  void dispose() {
+    super.dispose();
+    playMusicPageProvider!.downloadHelper.dispose();
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Consumer3<PlayListPageProvider,PlayListCurrentProvider,AudioPlayerProvider>(
@@ -43,7 +65,7 @@ class _PlayMusicState extends State<PlayMusic> {
               Hero(
                 tag: 'ssss',
                 child: StreamBuilder<SequenceState?>(
-                    stream: audioPlayerProvider.audioPlayer!.sequenceStateStream,
+                    stream: audioPlayerProvider.audioHelper.player.sequenceStateStream,
                     builder: (context, AsyncSnapshot<SequenceState?> snapshot) {
                       if (snapshot.data != null) {
                         return CachedNetworkImage(
@@ -142,8 +164,8 @@ class PlayMusicControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer3<PlayListPageProvider,PlayListCurrentProvider,AudioPlayerProvider>(
-        builder: (context, playListPageProvider,playListCurrentProvider,audioPlayerProvider,child) => SizedBox(
+    return Consumer5<PlayListPageProvider,PlayListCurrentProvider,AudioPlayerProvider,PlayMusicPageProvider,DownloadProvider>(
+        builder: (context, playListPageProvider,playListCurrentProvider,audioPlayerProvider,playMusicPageProvider,downloadProvider,child) => SizedBox(
         height: 310,
         width: MediaQuery.of(context).size.width,
         child: ClipRRect(
@@ -164,10 +186,13 @@ class PlayMusicControl extends StatelessWidget {
                       children: [
                         Expanded(
                           child: StreamBuilder<SequenceState?>(
-                            stream: audioPlayerProvider.audioPlayer!.sequenceStateStream,
+                            stream: audioPlayerProvider.audioHelper.player!.sequenceStateStream,
                             builder: (context,
                                 AsyncSnapshot<SequenceState?> snapshot) {
                               if (snapshot.hasData) {
+
+                                playMusicPageProvider.setSongDownload(audioPlayerProvider.listSongPlay![snapshot.data!.currentIndex]);
+
                                 return Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -198,10 +223,57 @@ class PlayMusicControl extends StatelessWidget {
                         ),
                         Row(
                           children:[
-                            const Icon(
-                              Icons.cloud_download,
-                              color: Colors.white,
-                              size: 30,
+                            GestureDetector(
+                              onTap: () async{
+                                String path = await playMusicPageProvider.downloadHelper.download(
+                                    playMusicPageProvider.songDownload!.preview
+                                );
+
+                                playMusicPageProvider!.downloadHelper.port.listen((dynamic data) {
+                                  String id = data[0];
+
+                                  int status = data[1];
+
+                                  int progress = data[2];
+
+                                  if (status == 2) {
+
+                                    print("RUNNING........................");
+
+                                  } else if (status == 3) {
+
+                                    print("COMPLETE........................");
+
+                                    print("PATH  ----------- $path");
+
+                                    Song songSaveDatabase = Song.allProperties(
+                                        id: playMusicPageProvider.songDownload!.id,
+                                        songTitle: playMusicPageProvider.songDownload!.songTitle,
+                                        preview: path,
+                                        artistName:  playMusicPageProvider.songDownload!.artistName,
+                                        pictureSmall:  playMusicPageProvider.songDownload!.pictureSmall,
+                                        pictureMedium:  playMusicPageProvider.songDownload!.pictureMedium,
+                                        pictureBig:  playMusicPageProvider.songDownload!.pictureBig
+                                    );
+
+                                    (() async {
+                                      await playMusicPageProvider.databaseHelper.insertTrack(songSaveDatabase);
+                                      downloadProvider.setDownloadCompleted(true);
+                                    })();
+
+                                  } else if (status == 4) {
+
+                                    print("FAILED........................");
+
+                                  }
+                                });
+
+                              },
+                              child: const Icon(
+                                Icons.cloud_download,
+                                color: Colors.white,
+                                size: 30,
+                              ),
                             ),
                             Container(
                               margin: const EdgeInsets.only(left: 20),
@@ -235,7 +307,7 @@ class PlayMusicControl extends StatelessWidget {
                   ),
                   Container(
                     margin: const EdgeInsets.only(left: 20,right: 20,top: 10),
-                    child: ControlButtonPlay(audioPlayerProvider.audioPlayer!),
+                    child: ControlButtonPlay(audioPlayerProvider.audioHelper.player!),
                   ),
                   Container(
                     height: 1,

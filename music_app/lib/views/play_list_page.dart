@@ -38,7 +38,7 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
 
   bool isPlay = false;
 
-  List playList = [];
+  List playList = [0];
 
   bool checkPlay = false;
 
@@ -63,14 +63,12 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
     ambiguate(WidgetsBinding.instance)!.addObserver(this);
 
 
-    if(audioPlayerProvider.audioPlayer == null && audioPlayerProvider.audioPlayerCurrent == null) {
-
-      audioPlayerProvider.setAudioPlayer(AudioPlayer());
+    if(audioPlayerProvider.listSongPlay!.isEmpty) {
 
       (()async{
         String? url = audioPlayerProvider.playListUrl;
 
-        await audioPlayerProvider.initPlayerController(url!);
+        audioPlayerProvider.audioHelper.initAudio(await audioPlayerProvider.initPlayerController(url!));
 
         setState(() {
           isLoading = true;
@@ -80,7 +78,6 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
 
     } else if(playListPageProvider.playListId == playListCurrentProvider.playListCurrentId) {
 
-      audioPlayerProvider.setAudioPlayer(audioPlayerProvider.audioPlayerCurrent!);
 
       isLoading = true;
 
@@ -94,12 +91,10 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
 
       idTemp = playListCurrentProvider.playListCurrentId!;
 
-      audioPlayerProvider.setAudioPlayer(AudioPlayer());
-
       (()async{
         String? url = audioPlayerProvider.playListUrl;
 
-        await audioPlayerProvider.initPlayerController(url!);
+        audioPlayerProvider.audioHelper.initAudio(await audioPlayerProvider.initPlayerController(url!));
 
         setState(() {
           isLoading = true;
@@ -132,7 +127,7 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
                     Positioned(
                       bottom: 10,
                       right: 20,
-                      child: isLoading ? ControlButton(player: audioPlayerProvider.audioPlayer, currentPlayer: audioPlayerProvider.audioPlayerCurrent) : const CircularProgressIndicator(),
+                      child: isLoading ? ControlButton(player: audioPlayerProvider.audioHelper.player) : const CircularProgressIndicator(),
                     ),
                     Positioned(
                       bottom: 60,
@@ -169,19 +164,13 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
                             onTap: () {
 
                               if(audioPlayerProvider.audioPlayerCurrent == null) {
-                                audioPlayerProvider.setAudioPlayerCurrent(audioPlayerProvider.audioPlayer!);
                                 audioPlayerProvider.setListSongPlay(playListCurrentProvider.listSongCurrent!);
                               } else if(playListPageProvider.playListId != idTemp && audioPlayerProvider.audioPlayer!.playing == false) {
                                 playListCurrentProvider.setPlayListCurrent(idTemp, listSongTemp);
-                                audioPlayerProvider.setAudioPlayerCurrent(audioPlayerProvider.audioPlayerCurrent!);
-                                audioPlayerProvider.setAudioPlayer(audioPlayerProvider.audioPlayerCurrent!);
                                 audioPlayerProvider.setListSongPlay(listSongTemp);
                               } else if(playListPageProvider.playListId != idTemp && audioPlayerProvider.audioPlayer!.playing == true) {
                                 audioPlayerProvider.setListSongPlay(listSongPlay);
-                                audioPlayerProvider.setAudioPlayerCurrent(audioPlayerProvider.audioPlayer!);
                               } else {
-                                audioPlayerProvider.setAudioPlayerCurrent(audioPlayerProvider.audioPlayer!);
-                                audioPlayerProvider.setAudioPlayer(audioPlayerProvider.audioPlayerCurrent!);
                                 audioPlayerProvider.setListSongPlay(listSongTemp);
                               }
 
@@ -305,122 +294,146 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
 
                             listSongPlay = snapshot.data!;
 
-                            return Expanded(
-                                child: ListView.builder(
-                                  itemCount: snapshot.data!.length,
-                                  itemBuilder: (context, index) => Container(
-                                    margin: const EdgeInsets.only(bottom: 0.3,),
-                                    padding: const EdgeInsets.only(left: 20),
-                                    height: 80,
-                                    width: MediaQuery.of(context).size.width,
-                                    decoration:BoxDecoration(
-                                        color: playList.contains(index) ? const Color.fromRGBO(
-                                            38, 39, 42, 1.0) : const Color.fromRGBO(
-                                            26, 27, 31, 1.0),
-                                        boxShadow: const [
-                                          BoxShadow(
-                                              color: Colors.white54,
-                                              offset: Offset(0,0.3)
-                                          )
-                                        ]
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
+                            return  StreamBuilder<SequenceState?>(
+                              stream: audioPlayerProvider.audioHelper.player.sequenceStateStream,
+                              builder: (context,AsyncSnapshot<SequenceState?> snapshotState) {
+                                if(snapshotState.hasData) {
+                                  return Expanded(
+                                      child: ListView.builder(
+                                        itemCount: snapshot.data!.length,
+                                        itemBuilder: (context, index) => Container(
+                                          margin: const EdgeInsets.only(bottom: 0.3,),
+                                          padding: const EdgeInsets.only(left: 20),
+                                          height: 80,
+                                          width: MediaQuery.of(context).size.width,
+                                          decoration:BoxDecoration(
+                                              color: snapshotState.data!.currentIndex == index ? const Color.fromRGBO(
+                                                  38, 39, 42, 1.0) : const Color.fromRGBO(
+                                                  26, 27, 31, 1.0),
+                                              boxShadow: const [
+                                                BoxShadow(
+                                                    color: Colors.white54,
+                                                    offset: Offset(0,0.3)
+                                                )
+                                              ]
+                                          ),
                                           child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
-                                              Container(
-                                                width: 60,
-                                                height: 60,
-                                                alignment: Alignment.center,
-                                                decoration:BoxDecoration(
-                                                    image: DecorationImage(
-                                                        image: NetworkImage(
-                                                            snapshot.data![index].pictureMedium
-                                                        )
-                                                    ),
-                                                    borderRadius: const BorderRadius.all(Radius.circular(10))
-                                                ),
-                                                child: GestureDetector(
-                                                  onTap: (){
-                                                    setState(() {
-                                                      checkPlay = playList.contains(index);
-                                                      if(checkPlay){
-                                                        playList.remove(index);
-                                                      } else {
-                                                        playList.clear();
-                                                        playList.add(index);
-                                                      }
-                                                    });
-                                                  },
-                                                  child: Icon(
-                                                    playList.contains(index) ? Icons.pause : Icons.play_arrow_sharp,
-                                                    size: 35,
-                                                    color: playList.contains(index) ? Colors.white : Colors.white70,
-                                                  ),
-                                                ),
-                                              ),
                                               Expanded(
-                                                child: Container(
-                                                  margin: const EdgeInsets.only(left: 15),
-                                                  child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                                    children: [
-                                                      Text(
-                                                        snapshot.data![index].songTitle,
-                                                        overflow: TextOverflow.ellipsis,
-                                                        style: const TextStyle(
-                                                            color: Colors.white,
-                                                            fontWeight: FontWeight.w500
+                                                child: Row(
+                                                  children: [
+                                                    Container(
+                                                      width: 60,
+                                                      height: 60,
+                                                      alignment: Alignment.center,
+                                                      decoration:BoxDecoration(
+                                                          image: DecorationImage(
+                                                              image: NetworkImage(
+                                                                  snapshot.data![index].pictureMedium
+                                                              )
+                                                          ),
+                                                          borderRadius: const BorderRadius.all(Radius.circular(10))
+                                                      ),
+                                                      child: GestureDetector(
+                                                        onTap: (){
+                                                            checkPlay = playList.contains(index);
+                                                            if(checkPlay){
+                                                              playList.remove(index);
+                                                            } else {
+                                                              playList.clear();
+                                                              playList.add(index);
+                                                            }
+
+                                                            if(snapshotState.data!.currentIndex != index){
+                                                              audioPlayerProvider.audioHelper.player.seek(Duration.zero, index: index);
+                                                              if(!audioPlayerProvider.audioHelper.player.playing){
+                                                                audioPlayerProvider.audioHelper.player.play();
+                                                              }
+                                                            } else {
+                                                              if(audioPlayerProvider.audioHelper.player.playing) {
+                                                                audioPlayerProvider.audioHelper.player.pause();
+                                                              } else {
+                                                                audioPlayerProvider.audioHelper.player.play();
+                                                              }
+                                                            }
+                                                        },
+                                                        child: StreamBuilder<PlayerState>(
+                                                          stream: audioPlayerProvider.audioHelper.player.playerStateStream,
+                                                          builder: (context, snapshot) {
+                                                            return Icon(
+                                                              playList.contains(index) &&  audioPlayerProvider.audioHelper.player.playing  ? Icons.pause : Icons.play_arrow_sharp,
+                                                              size: 35,
+                                                              color: playList.contains(index) ? Colors.white : Colors.white70,
+                                                            );
+                                                          },
                                                         ),
                                                       ),
-                                                      Text(
-                                                        snapshot.data![index].artistName,
-                                                        style: const TextStyle(
-                                                            color: Colors.white,
-                                                            fontSize: 10
+                                                    ),
+                                                    Expanded(
+                                                      child: Container(
+                                                        margin: const EdgeInsets.only(left: 15),
+                                                        child: Column(
+                                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                                          children: [
+                                                            Text(
+                                                              snapshot.data![index].songTitle,
+                                                              overflow: TextOverflow.ellipsis,
+                                                              style: const TextStyle(
+                                                                  color: Colors.white,
+                                                                  fontWeight: FontWeight.w500
+                                                              ),
+                                                            ),
+                                                            Text(
+                                                              snapshot.data![index].artistName,
+                                                              style: const TextStyle(
+                                                                  color: Colors.white,
+                                                                  fontSize: 10
+                                                              ),
+                                                            )
+                                                          ],
                                                         ),
-                                                      )
-                                                    ],
-                                                  ),
+                                                      ),
+                                                    )
+                                                  ],
                                                 ),
+                                              ),
+                                              Row(
+                                                children: [
+                                                  GestureDetector(
+                                                    onTap: (){
+                                                      setState(() {
+                                                        check = listFavorite.contains(index);
+                                                        if(check) {
+                                                          listFavorite.remove(index);
+                                                        } else {
+                                                          listFavorite.add(index);
+                                                        }
+                                                      });
+                                                    },
+                                                    child: Icon(
+                                                      listFavorite.contains(index) ? Icons.favorite : Icons.favorite_border_outlined,
+                                                      color: listFavorite.contains(index) ? const Color.fromRGBO(39, 183, 90, 1.0) : Colors.white,
+                                                    ),
+                                                  ),
+                                                  Container(
+                                                    margin: const EdgeInsets.only(left: 20,right: 20),
+                                                    child: const Icon(
+                                                      Icons.more_vert,
+                                                      color: Colors.white,
+                                                    ),
+                                                  )
+                                                ],
                                               )
                                             ],
                                           ),
                                         ),
-                                        Row(
-                                          children: [
-                                            GestureDetector(
-                                              onTap: (){
-                                                setState(() {
-                                                  check = listFavorite.contains(index);
-                                                  if(check) {
-                                                    listFavorite.remove(index);
-                                                  } else {
-                                                    listFavorite.add(index);
-                                                  }
-                                                });
-                                              },
-                                              child: Icon(
-                                                listFavorite.contains(index) ? Icons.favorite : Icons.favorite_border_outlined,
-                                                color: listFavorite.contains(index) ? const Color.fromRGBO(39, 183, 90, 1.0) : Colors.white,
-                                              ),
-                                            ),
-                                            Container(
-                                              margin: const EdgeInsets.only(left: 20,right: 20),
-                                              child: const Icon(
-                                                Icons.more_vert,
-                                                color: Colors.white,
-                                              ),
-                                            )
-                                          ],
-                                        )
-                                      ],
-                                    ),
-                                  ),
-                                )
+                                      )
+                                  );
+                                }
+                                return const CircularProgressIndicator();
+                              },
                             );
                           } else if(snapshot.hasError) {
                             return Text("${snapshot.error}");
@@ -429,7 +442,7 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
                         },
                       ) : Expanded(
                           child: StreamBuilder<SequenceState?>(
-                                  stream: audioPlayerProvider.audioPlayer!.sequenceStateStream,
+                                  stream: audioPlayerProvider.audioHelper.player.sequenceStateStream,
                                   builder: (context,AsyncSnapshot<SequenceState?> snapshot) {
                                     if(snapshot.hasData) {
 
@@ -485,24 +498,24 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
                                                             }
 
                                                             if(snapshot.data!.currentIndex != index){
-                                                              audioPlayerProvider.audioPlayer!.seek(Duration.zero, index: index);
-                                                              if(!audioPlayerProvider.audioPlayer!.playing){
-                                                                audioPlayerProvider.audioPlayer!.play();
+                                                              audioPlayerProvider.audioHelper.player.seek(Duration.zero, index: index);
+                                                              if(!audioPlayerProvider.audioHelper.player.playing){
+                                                                audioPlayerProvider.audioHelper.player.play();
                                                               }
                                                             } else {
-                                                              if(audioPlayerProvider.audioPlayer!.playing) {
-                                                                audioPlayerProvider.audioPlayer!.pause();
+                                                              if(audioPlayerProvider.audioHelper.player.playing) {
+                                                                audioPlayerProvider.audioHelper.player.pause();
                                                               } else {
-                                                                audioPlayerProvider.audioPlayer!.play();
+                                                                audioPlayerProvider.audioHelper.player.play();
                                                               }
                                                             }
                                                           });
                                                         },
                                                         child: StreamBuilder<PlayerState>(
-                                                          stream: audioPlayerProvider.audioPlayer!.playerStateStream,
+                                                          stream: audioPlayerProvider.audioHelper.player.playerStateStream,
                                                           builder: (context, snapshot) {
                                                             return Icon(
-                                                              playList.contains(index) &&  audioPlayerProvider.audioPlayer!.playing  ? Icons.pause : Icons.play_arrow_sharp,
+                                                              playList.contains(index) &&  audioPlayerProvider.audioHelper.player.playing  ? Icons.pause : Icons.play_arrow_sharp,
                                                               size: 35,
                                                               color: playList.contains(index) ? Colors.white : Colors.white70,
                                                             );
@@ -571,7 +584,6 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
                                         ),
                                       );
                                     }
-
                                     return const CircularProgressIndicator();
                                   }
                           )

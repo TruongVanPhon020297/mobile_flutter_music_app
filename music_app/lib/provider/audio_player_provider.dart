@@ -37,9 +37,7 @@ class AudioPlayerProvider extends ChangeNotifier {
   }
 
 
-  Future<void> initPlayerController(String url) async{
-
-    audioHelper.setAudioPlayer(audioPlayer!);
+  initPlayerController(String url) async{
 
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.black,
@@ -47,7 +45,7 @@ class AudioPlayerProvider extends ChangeNotifier {
 
     List<Song> listSongPlay = await getAllSongByGenre(url);
 
-    audioHelper.setPlayList(ConcatenatingAudioSource(children: [
+    return ConcatenatingAudioSource(children: [
       ...listSongPlay.map((e) => AudioSource.uri(
         Uri.parse(e.preview),
         tag: MediaItem(
@@ -59,10 +57,7 @@ class AudioPlayerProvider extends ChangeNotifier {
           ),
         )
       ),)
-    ]));
-
-    await audioHelper.initAudio();
-
+    ]);
   }
 
 }
