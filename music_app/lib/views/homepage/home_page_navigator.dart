@@ -37,93 +37,12 @@ class NavigatorBottom extends StatelessWidget {
                     Row(
                       children: [
                         Row(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: GestureDetector(
-                                onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const PlayMusic(title: "Play Music"),
-                                    )
-                                ),
-                                child: Hero(
-                                  tag: 'ssss',
-                                  child: Image.network(
-                                    'https://bazaarvietnam.vn/wp-content/uploads/2021/10/Adele-easy-on-me-8668-scaled-e1634283165498.jpg',
-                                    width: 50,
-                                    height: 50,
-                                    fit: BoxFit.fill,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Container(
-                              margin: const EdgeInsets.only(left: 15),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: const [
-                                  Text(
-                                    "Easy On Me",
-                                    style: TextStyle(
-                                        color: Colors.white
-                                    ),
-                                  ),
-                                  SizedBox(height: 10,),
-                                  Text(
-                                    "Adele",
-                                    style: TextStyle(
-                                        color: Colors.white70,
-                                        fontWeight: FontWeight.normal,
-                                        fontSize: 12
-                                    ),
-                                  )
-                                ],
-                              ),
+                          children: const [
+                            SizedBox(
+                              height: 50,
                             )
                           ],
                         ),
-                        Expanded(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              GestureDetector(
-                                  onTap: (){
-
-                                  },
-                                  child:const Icon(
-                                    Icons.favorite,
-                                    color: Color.fromRGBO(39, 184, 91, 1.0),
-                                    size: 30,
-                                  )
-                              ),
-                              GestureDetector(
-                                onTap: (){
-
-                                },
-                                child: Container(
-                                    width: 40,
-                                    height: 40,
-                                    margin: const EdgeInsets.only(left: 30),
-                                    decoration: BoxDecoration(
-                                        border:  const Border.fromBorderSide(
-                                            BorderSide(
-                                                width: 1,
-                                                color: Color.fromRGBO(39, 184, 91, 1.0)
-                                            )
-                                        ),
-                                        borderRadius: BorderRadius.circular(40)
-                                    ),
-                                    child:const Icon(
-                                      Icons.pause,
-                                      color: Colors.white70,
-                                      size: 30,
-                                    )
-                                ),
-                              )
-                            ],
-                          ),
-                        )
                       ],
                     ) :
                     StreamBuilder<SequenceState?>(
