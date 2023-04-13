@@ -17,7 +17,7 @@ class DatabaseHelper {
     );
   }
 
-  Future<void> insertTrack(Song song) async {
+  Future<bool> insertTrack(Song song) async {
     final db = await DatabaseHelper.db();
     await db.insert(
       'songs',
@@ -25,7 +25,9 @@ class DatabaseHelper {
       conflictAlgorithm: sql.ConflictAlgorithm.replace,
     );
 
-    print("Insert Data Success");
+    print("INSERT SUCCESS ${song.preview} ----------- ${song.id}");
+
+    return true;
 
   }
 

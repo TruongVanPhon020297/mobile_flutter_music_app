@@ -63,7 +63,7 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
     ambiguate(WidgetsBinding.instance)!.addObserver(this);
 
 
-    if(audioPlayerProvider.listSongPlay!.isEmpty) {
+    if(playListCurrentProvider.playListCurrentId == null) {
 
       (()async{
         String? url = audioPlayerProvider.playListUrl;
@@ -127,7 +127,7 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
                     Positioned(
                       bottom: 10,
                       right: 20,
-                      child: isLoading ? ControlButton(player: audioPlayerProvider.audioHelper.player) : const CircularProgressIndicator(),
+                      child: ControlButton(player: audioPlayerProvider.audioHelper.player),
                     ),
                     Positioned(
                       bottom: 60,

@@ -1,8 +1,10 @@
 import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:music_app/provider/download_provider.dart';
+import 'package:music_app/provider/user_page_provider.dart';
 import 'package:music_app/views/play_list_page.dart';
 import 'package:provider/provider.dart';
 
@@ -164,8 +166,8 @@ class PlayMusicControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer5<PlayListPageProvider,PlayListCurrentProvider,AudioPlayerProvider,PlayMusicPageProvider,DownloadProvider>(
-        builder: (context, playListPageProvider,playListCurrentProvider,audioPlayerProvider,playMusicPageProvider,downloadProvider,child) => SizedBox(
+    return Consumer6<PlayListPageProvider,PlayListCurrentProvider,AudioPlayerProvider,PlayMusicPageProvider,DownloadProvider,UserPageProvider>(
+        builder: (context, playListPageProvider,playListCurrentProvider,audioPlayerProvider,playMusicPageProvider,downloadProvider,userPageProvider,child) => SizedBox(
         height: 310,
         width: MediaQuery.of(context).size.width,
         child: ClipRRect(
@@ -179,21 +181,28 @@ class PlayMusicControl extends StatelessWidget {
               color: Colors.black.withOpacity(0.5),
               child: Column(
                 children: [
-                  Container(
-                    margin: const EdgeInsets.only(left: 20,right: 20,top: 20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: StreamBuilder<SequenceState?>(
-                            stream: audioPlayerProvider.audioHelper.player!.sequenceStateStream,
-                            builder: (context,
-                                AsyncSnapshot<SequenceState?> snapshot) {
-                              if (snapshot.hasData) {
+                  StreamBuilder<SequenceState?>(
+                    stream: audioPlayerProvider.audioHelper.player.sequenceStateStream,
+                    builder: (context, snapshot) {
+                      if(snapshot.hasData) {
 
-                                playMusicPageProvider.setSongDownload(audioPlayerProvider.listSongPlay![snapshot.data!.currentIndex]);
+                        playMusicPageProvider.setSongDownload(audioPlayerProvider.listSongPlay![snapshot.data!.currentIndex]);
 
-                                return Column(
+                        bool isDownload = false;
+
+                        for (var element in userPageProvider.allSongDatabase) {
+                          if(element.id == audioPlayerProvider.listSongPlay![snapshot.data!.currentIndex].id) {
+                            isDownload = true;
+                          }
+                        }
+
+                        return Container(
+                          margin: const EdgeInsets.only(left: 20,right: 20,top: 20),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
@@ -214,78 +223,106 @@ class PlayMusicControl extends StatelessWidget {
                                       ),
                                     )
                                   ],
-                                );
-                              } else {
-                                return const CircularProgressIndicator();
-                              }
-                            },
+                                ),
+                              ),
+                              Row(
+                                children:[
+                                  GestureDetector(
+                                    onTap: () async{
+                                      String path = await playMusicPageProvider.downloadHelper.download(
+                                          playMusicPageProvider.songDownload!.preview
+                                      );
+
+                                      playMusicPageProvider.setPathSaveDataBase(path);
+
+                                      playMusicPageProvider!.downloadHelper.port.listen((dynamic data) {
+                                        String id = data[0];
+
+                                        int status = data[1];
+
+                                        int progress = data[2];
+
+                                        if (status == 2) {
+
+                                          print("RUNNING........................");
+
+                                        } else if (status == 3) {
+
+                                          print("COMPLETE........................");
+
+                                          print("PATH  ----------- $path");
+
+                                          Song songSaveDatabase = Song.allProperties(
+                                              id: playMusicPageProvider.songDownload!.id,
+                                              songTitle: playMusicPageProvider.songDownload!.songTitle,
+                                              preview: playMusicPageProvider.pathSaveDataBase!,
+                                              artistName:  playMusicPageProvider.songDownload!.artistName,
+                                              pictureSmall:  playMusicPageProvider.songDownload!.pictureSmall,
+                                              pictureMedium:  playMusicPageProvider.songDownload!.pictureMedium,
+                                              pictureBig:  playMusicPageProvider.songDownload!.pictureBig
+                                          );
+
+                                          (() async {
+                                            downloadProvider.setDownloadCompleted(await playMusicPageProvider.databaseHelper.insertTrack(songSaveDatabase));
+
+                                            print("BOOL     -----------> ");
+
+                                            userPageProvider.allSongDatabase.add(songSaveDatabase);
+
+                                            Fluttertoast.showToast(
+                                              msg: "Download complete!",
+                                              toastLength: Toast.LENGTH_SHORT,
+                                              gravity: ToastGravity.BOTTOM,
+                                              timeInSecForIosWeb: 1,
+                                              backgroundColor: Colors.red,
+                                              textColor: Colors.white,
+                                              fontSize: 16.0,
+                                            );
+
+                                          })();
+
+
+
+
+                                        } else if (status == 4) {
+
+                                          print("FAILED........................");
+
+
+                                          Fluttertoast.showToast(
+                                            msg: "Download failed!",
+                                            toastLength: Toast.LENGTH_SHORT,
+                                            gravity: ToastGravity.BOTTOM,
+                                            timeInSecForIosWeb: 1,
+                                            backgroundColor: Colors.red,
+                                            textColor: Colors.white,
+                                            fontSize: 16.0,
+                                          );
+
+                                        }
+                                      });
+
+                                    },
+                                    child: isDownload ? const Icon(
+                                      Icons.cloud_download,
+                                      color: Color.fromRGBO(39, 184, 91, 1.0),
+                                      size: 30,
+                                    ) : const Icon(
+                                      Icons.cloud_download,
+                                      color: Colors.white,
+                                      size: 30,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            ],
                           ),
-                        ),
-                        Row(
-                          children:[
-                            GestureDetector(
-                              onTap: () async{
-                                String path = await playMusicPageProvider.downloadHelper.download(
-                                    playMusicPageProvider.songDownload!.preview
-                                );
+                        );
+                      }
 
-                                playMusicPageProvider!.downloadHelper.port.listen((dynamic data) {
-                                  String id = data[0];
+                      return const CircularProgressIndicator();
 
-                                  int status = data[1];
-
-                                  int progress = data[2];
-
-                                  if (status == 2) {
-
-                                    print("RUNNING........................");
-
-                                  } else if (status == 3) {
-
-                                    print("COMPLETE........................");
-
-                                    print("PATH  ----------- $path");
-
-                                    Song songSaveDatabase = Song.allProperties(
-                                        id: playMusicPageProvider.songDownload!.id,
-                                        songTitle: playMusicPageProvider.songDownload!.songTitle,
-                                        preview: path,
-                                        artistName:  playMusicPageProvider.songDownload!.artistName,
-                                        pictureSmall:  playMusicPageProvider.songDownload!.pictureSmall,
-                                        pictureMedium:  playMusicPageProvider.songDownload!.pictureMedium,
-                                        pictureBig:  playMusicPageProvider.songDownload!.pictureBig
-                                    );
-
-                                    (() async {
-                                      await playMusicPageProvider.databaseHelper.insertTrack(songSaveDatabase);
-                                      downloadProvider.setDownloadCompleted(true);
-                                    })();
-
-                                  } else if (status == 4) {
-
-                                    print("FAILED........................");
-
-                                  }
-                                });
-
-                              },
-                              child: const Icon(
-                                Icons.cloud_download,
-                                color: Colors.white,
-                                size: 30,
-                              ),
-                            ),
-                            Container(
-                              margin: const EdgeInsets.only(left: 20),
-                              child: const Icon(
-                                Icons.favorite,
-                                color: Color.fromRGBO(39, 184, 91, 1.0),
-                              ),
-                            ),
-                          ],
-                        )
-                      ],
-                    ),
+                    },
                   ),
                   Container(
                     margin: const EdgeInsets.only(top: 20,left: 20,right: 20),

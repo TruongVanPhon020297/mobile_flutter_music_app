@@ -127,7 +127,7 @@ class NavigatorBottom extends StatelessWidget {
                       ],
                     ) :
                     StreamBuilder<SequenceState?>(
-                      stream: audioPlayerProvider.audioHelper.player?.sequenceStateStream,
+                      stream: audioPlayerProvider.audioHelper.player.sequenceStateStream,
                       builder: (context,AsyncSnapshot<SequenceState?> snapshot) {
 
                         if(snapshot.hasData) {

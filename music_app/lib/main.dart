@@ -7,6 +7,7 @@ import 'package:music_app/provider/home_page_provider.dart';
 import 'package:music_app/provider/play_list_current_provider.dart';
 import 'package:music_app/provider/play_list_page_provider.dart';
 import 'package:music_app/provider/play_music_page_provider.dart';
+import 'package:music_app/provider/user_page_provider.dart';
 import 'package:music_app/views/homepage/home_page.dart';
 import 'package:provider/provider.dart';
 
@@ -50,6 +51,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (context) => DownloadProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => UserPageProvider(),
         )
       ],
       child: MaterialApp(

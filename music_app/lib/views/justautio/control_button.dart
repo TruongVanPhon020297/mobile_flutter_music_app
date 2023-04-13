@@ -14,7 +14,6 @@ class ControlButton extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-
         StreamBuilder<PlayerState>(
           stream: player!.playerStateStream,
           builder: (context, snapshot) {
@@ -29,7 +28,10 @@ class ControlButton extends StatelessWidget {
                   size: 60,
                 ),
                 iconSize: 64.0,
-                onPressed: player!.play,
+                onPressed: () {
+                  player!.play();
+                  // Xử lý hành động của người dùng khi nhấp vào nút Play ở đây
+                },
               );
             } else if (processingState != ProcessingState.completed) {
               return IconButton(
@@ -39,7 +41,10 @@ class ControlButton extends StatelessWidget {
                   size: 60,
                 ),
                 iconSize: 64.0,
-                onPressed: player!.pause,
+                onPressed: () {
+                  player!.pause();
+                  // Xử lý hành động của người dùng khi nhấp vào nút Pause ở đây
+                },
               );
             } else {
               return IconButton(
@@ -49,7 +54,10 @@ class ControlButton extends StatelessWidget {
                   size: 60,
                 ),
                 iconSize: 60.0,
-                onPressed: () => player!.seek(Duration.zero,),
+                onPressed: () {
+                  player!.seek(Duration.zero);
+                  // Xử lý hành động của người dùng khi nhấp vào nút Play từ đầu ở đây
+                },
               );
             }
           },

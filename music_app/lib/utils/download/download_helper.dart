@@ -12,7 +12,7 @@ class DownloadHelper {
 
     String? path;
 
-    String fileName = '${DateTime.now()}.mp3';
+    String fileName = '${DateTime.now().microsecond}.mp3';
 
     var status = await Permission.storage.request();
     if (status.isGranted) {

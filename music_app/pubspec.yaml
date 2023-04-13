@@ -44,6 +44,7 @@ dependencies:
   just_audio_background: ^0.0.1-beta.9
   flutter_downloader: ^1.10.2
   permission_handler: ^10.2.0
+  fluttertoast: ^8.2.1
 
 
 dev_dependencies:
