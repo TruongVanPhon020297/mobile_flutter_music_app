@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../model/position_data.dart';
 import '../model/song.dart';
 import '../provider/audio_player_provider.dart';
+import '../provider/user_page_provider.dart';
 
 class PlayListPage extends StatefulWidget {
   const PlayListPage({Key? key}) : super(key: key);
@@ -52,6 +53,8 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
 
   int idTemp = -1;
 
+  List<Song>? listSongInitController;
+
   @override
   void initState() {
     super.initState();
@@ -62,13 +65,13 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
 
     ambiguate(WidgetsBinding.instance)!.addObserver(this);
 
-
-    if(playListCurrentProvider.playListCurrentId == null) {
+    if(playListCurrentProvider.playListCurrentId == -1) {
 
       (()async{
-        String? url = audioPlayerProvider.playListUrl;
 
-        audioPlayerProvider.audioHelper.initAudio(await audioPlayerProvider.initPlayerController(url!));
+        listSongInitController = await playListPageProvider.getAllSongProvider();
+
+        audioPlayerProvider.audioHelper.initAudio(audioPlayerProvider.initListSongForPlayerController(listSongInitController!));
 
         setState(() {
           isLoading = true;
@@ -92,9 +95,11 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
       idTemp = playListCurrentProvider.playListCurrentId!;
 
       (()async{
-        String? url = audioPlayerProvider.playListUrl;
 
-        audioPlayerProvider.audioHelper.initAudio(await audioPlayerProvider.initPlayerController(url!));
+        listSongInitController = await playListPageProvider.getAllSongProvider();
+
+
+        audioPlayerProvider.audioHelper.initAudio(audioPlayerProvider.initListSongForPlayerController(listSongInitController!));
 
         setState(() {
           isLoading = true;
@@ -107,8 +112,8 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
   @override
   Widget build(BuildContext context) {
 
-    return Consumer3<PlayListPageProvider,PlayListCurrentProvider,AudioPlayerProvider>(
-      builder: (context, playListPageProvider,playListCurrentProvider,audioPlayerProvider,child) => Scaffold(
+    return Consumer4<PlayListPageProvider,PlayListCurrentProvider,AudioPlayerProvider,UserPageProvider>(
+      builder: (context, playListPageProvider,playListCurrentProvider,audioPlayerProvider,userPageProvider,child) => Scaffold(
           backgroundColor: const Color.fromRGBO(26, 27, 31, 1.0),
           body: Column(
             children: [
@@ -164,7 +169,7 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
                             onTap: () {
 
                               if(audioPlayerProvider.audioPlayerCurrent == null) {
-                                audioPlayerProvider.setListSongPlay(playListCurrentProvider.listSongCurrent!);
+                                audioPlayerProvider.setListSongPlay(listSongInitController!);
                               } else if(playListPageProvider.playListId != idTemp && audioPlayerProvider.audioPlayer!.playing == false) {
                                 playListCurrentProvider.setPlayListCurrent(idTemp, listSongTemp);
                                 audioPlayerProvider.setListSongPlay(listSongTemp);
@@ -282,165 +287,142 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
 
                       playListPageProvider.playListId != playListCurrentProvider.playListCurrentId ?
 
-                      FutureBuilder<List<Song>>(
-                        future: playListPageProvider.getAllSongProvider(),
-                        builder: (context, snapshot) {
-                          if(snapshot.hasData) {
-
-                            playListCurrentProvider.setPlayListCurrent(
-                              playListPageProvider.playListId,
-                              snapshot.data!
-                            );
-
-                            listSongPlay = snapshot.data!;
-
-                            return  StreamBuilder<SequenceState?>(
-                              stream: audioPlayerProvider.audioHelper.player.sequenceStateStream,
-                              builder: (context,AsyncSnapshot<SequenceState?> snapshotState) {
-                                if(snapshotState.hasData) {
-                                  return Expanded(
-                                      child: ListView.builder(
-                                        itemCount: snapshot.data!.length,
-                                        itemBuilder: (context, index) => Container(
-                                          margin: const EdgeInsets.only(bottom: 0.3,),
-                                          padding: const EdgeInsets.only(left: 20),
-                                          height: 80,
-                                          width: MediaQuery.of(context).size.width,
-                                          decoration:BoxDecoration(
-                                              color: snapshotState.data!.currentIndex == index ? const Color.fromRGBO(
-                                                  38, 39, 42, 1.0) : const Color.fromRGBO(
-                                                  26, 27, 31, 1.0),
-                                              boxShadow: const [
-                                                BoxShadow(
-                                                    color: Colors.white54,
-                                                    offset: Offset(0,0.3)
-                                                )
-                                              ]
-                                          ),
+                      StreamBuilder<SequenceState?>(
+                        stream: audioPlayerProvider.audioHelper.player.sequenceStateStream,
+                        builder: (context,AsyncSnapshot<SequenceState?> snapshotState) {
+                          if(snapshotState.hasData && isLoading) {
+                            return Expanded(
+                                child: ListView.builder(
+                                  itemCount: listSongInitController!.length,
+                                  itemBuilder: (context, index) => Container(
+                                    margin: const EdgeInsets.only(bottom: 0.3,),
+                                    padding: const EdgeInsets.only(left: 20),
+                                    height: 80,
+                                    width: MediaQuery.of(context).size.width,
+                                    decoration:BoxDecoration(
+                                        color: snapshotState.data!.currentIndex == index ? const Color.fromRGBO(
+                                            38, 39, 42, 1.0) : const Color.fromRGBO(
+                                            26, 27, 31, 1.0),
+                                        boxShadow: const [
+                                          BoxShadow(
+                                              color: Colors.white54,
+                                              offset: Offset(0,0.3)
+                                          )
+                                        ]
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
                                           child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
-                                              Expanded(
-                                                child: Row(
-                                                  children: [
-                                                    Container(
-                                                      width: 60,
-                                                      height: 60,
-                                                      alignment: Alignment.center,
-                                                      decoration:BoxDecoration(
-                                                          image: DecorationImage(
-                                                              image: NetworkImage(
-                                                                  snapshot.data![index].pictureMedium
-                                                              )
-                                                          ),
-                                                          borderRadius: const BorderRadius.all(Radius.circular(10))
-                                                      ),
-                                                      child: GestureDetector(
-                                                        onTap: (){
-                                                            checkPlay = playList.contains(index);
-                                                            if(checkPlay){
-                                                              playList.remove(index);
-                                                            } else {
-                                                              playList.clear();
-                                                              playList.add(index);
-                                                            }
-
-                                                            if(snapshotState.data!.currentIndex != index){
-                                                              audioPlayerProvider.audioHelper.player.seek(Duration.zero, index: index);
-                                                              if(!audioPlayerProvider.audioHelper.player.playing){
-                                                                audioPlayerProvider.audioHelper.player.play();
-                                                              }
-                                                            } else {
-                                                              if(audioPlayerProvider.audioHelper.player.playing) {
-                                                                audioPlayerProvider.audioHelper.player.pause();
-                                                              } else {
-                                                                audioPlayerProvider.audioHelper.player.play();
-                                                              }
-                                                            }
-                                                        },
-                                                        child: StreamBuilder<PlayerState>(
-                                                          stream: audioPlayerProvider.audioHelper.player.playerStateStream,
-                                                          builder: (context, snapshot) {
-                                                            return Icon(
-                                                              playList.contains(index) &&  audioPlayerProvider.audioHelper.player.playing  ? Icons.pause : Icons.play_arrow_sharp,
-                                                              size: 35,
-                                                              color: playList.contains(index) ? Colors.white : Colors.white70,
-                                                            );
-                                                          },
-                                                        ),
-                                                      ),
+                                              Container(
+                                                width: 60,
+                                                height: 60,
+                                                alignment: Alignment.center,
+                                                decoration:BoxDecoration(
+                                                    image: DecorationImage(
+                                                        image: NetworkImage(
+                                                            listSongInitController![index].pictureMedium
+                                                        )
                                                     ),
-                                                    Expanded(
-                                                      child: Container(
-                                                        margin: const EdgeInsets.only(left: 15),
-                                                        child: Column(
-                                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                                          children: [
-                                                            Text(
-                                                              snapshot.data![index].songTitle,
-                                                              overflow: TextOverflow.ellipsis,
-                                                              style: const TextStyle(
-                                                                  color: Colors.white,
-                                                                  fontWeight: FontWeight.w500
-                                                              ),
-                                                            ),
-                                                            Text(
-                                                              snapshot.data![index].artistName,
-                                                              style: const TextStyle(
-                                                                  color: Colors.white,
-                                                                  fontSize: 10
-                                                              ),
-                                                            )
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    )
-                                                  ],
+                                                    borderRadius: const BorderRadius.all(Radius.circular(10))
+                                                ),
+                                                child: GestureDetector(
+                                                  onTap: (){
+                                                    checkPlay = playList.contains(index);
+                                                    if(checkPlay){
+                                                      playList.remove(index);
+                                                    } else {
+                                                      playList.clear();
+                                                      playList.add(index);
+                                                    }
+
+                                                    if(snapshotState.data!.currentIndex != index){
+                                                      audioPlayerProvider.audioHelper.player.seek(Duration.zero, index: index);
+                                                      if(!audioPlayerProvider.audioHelper.player.playing){
+                                                        audioPlayerProvider.audioHelper.player.play();
+                                                      }
+                                                    } else {
+                                                      if(audioPlayerProvider.audioHelper.player.playing) {
+                                                        audioPlayerProvider.audioHelper.player.pause();
+                                                      } else {
+                                                        audioPlayerProvider.audioHelper.player.play();
+                                                      }
+                                                    }
+                                                  },
+                                                  child: StreamBuilder<PlayerState>(
+                                                    stream: audioPlayerProvider.audioHelper.player.playerStateStream,
+                                                    builder: (context, snapshot) {
+                                                      return Icon(
+                                                        playList.contains(index) &&  audioPlayerProvider.audioHelper.player.playing  ? Icons.pause : Icons.play_arrow_sharp,
+                                                        size: 35,
+                                                        color: playList.contains(index) ? Colors.white : Colors.white70,
+                                                      );
+                                                    },
+                                                  ),
                                                 ),
                                               ),
-                                              Row(
-                                                children: [
-                                                  GestureDetector(
-                                                    onTap: (){
-                                                      setState(() {
-                                                        check = listFavorite.contains(index);
-                                                        if(check) {
-                                                          listFavorite.remove(index);
-                                                        } else {
-                                                          listFavorite.add(index);
-                                                        }
-                                                      });
-                                                    },
-                                                    child: Icon(
-                                                      listFavorite.contains(index) ? Icons.favorite : Icons.favorite_border_outlined,
-                                                      color: listFavorite.contains(index) ? const Color.fromRGBO(39, 183, 90, 1.0) : Colors.white,
-                                                    ),
+                                              Expanded(
+                                                child: Container(
+                                                  margin: const EdgeInsets.only(left: 15),
+                                                  child: Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                                    children: [
+                                                      Text(
+                                                        listSongInitController![index].songTitle,
+                                                        overflow: TextOverflow.ellipsis,
+                                                        style: const TextStyle(
+                                                            color: Colors.white,
+                                                            fontWeight: FontWeight.w500
+                                                        ),
+                                                      ),
+                                                      Text(
+                                                        listSongInitController![index].artistName,
+                                                        style: const TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 10
+                                                        ),
+                                                      )
+                                                    ],
                                                   ),
-                                                  Container(
-                                                    margin: const EdgeInsets.only(left: 20,right: 20),
-                                                    child: const Icon(
-                                                      Icons.more_vert,
-                                                      color: Colors.white,
-                                                    ),
-                                                  )
-                                                ],
+                                                ),
                                               )
                                             ],
                                           ),
                                         ),
-                                      )
-                                  );
-                                }
-                                return const CircularProgressIndicator();
-                              },
+                                        Row(
+                                          children:[
+                                            Container(
+                                              margin: const EdgeInsets.only(right: 20),
+                                              child: GestureDetector(
+                                                onTap: (){
+                                                  print("SONG ID --------------> ${listSongInitController![index].id}");
+                                                },
+                                                child: userPageProvider.listIdSongDatabase.contains(listSongInitController![index].id) ? const Icon(
+                                                  Icons.cloud_download,
+                                                  color: Color.fromRGBO(39, 184, 91, 1.0),
+                                                  size: 30,
+                                                ) : const Icon(
+                                                  Icons.cloud_download,
+                                                  color: Colors.white,
+                                                  size: 30,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                )
                             );
-                          } else if(snapshot.hasError) {
-                            return Text("${snapshot.error}");
                           }
                           return const CircularProgressIndicator();
                         },
-                      ) : Expanded(
+                      )
+                          : Expanded(
                           child: StreamBuilder<SequenceState?>(
                                   stream: audioPlayerProvider.audioHelper.player.sequenceStateStream,
                                   builder: (context,AsyncSnapshot<SequenceState?> snapshot) {

@@ -1,5 +1,9 @@
 
 
+import 'dart:io';
+
+import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
@@ -20,16 +24,6 @@ class DownloadPlayListPage extends StatefulWidget {
 
   @override
   State<DownloadPlayListPage> createState() => _DownloadPlayListPageState();
-}
-
-class SongData {
-
-  final String image;
-  final String single;
-  final String nameSong;
-
-  SongData({required this.image,required this.single,required this.nameSong});
-
 }
 
 class _DownloadPlayListPageState extends State<DownloadPlayListPage> with WidgetsBindingObserver{
@@ -85,6 +79,60 @@ class _DownloadPlayListPageState extends State<DownloadPlayListPage> with Widget
 
   }
 
+  void showDialog(Song song) {
+
+    var playMusicPageProvider = Provider.of<PlayMusicPageProvider>(context,listen: false);
+
+    var userPageProvider = Provider.of<UserPageProvider>(context,listen: false);
+
+    var audioPlayerProvider = Provider.of<AudioPlayerProvider>(context,listen: false);
+
+    var downloadProvider = Provider.of<DownloadProvider>(context,listen: false);
+
+    AwesomeDialog(
+      context: context,
+      dialogType: DialogType.warning,
+      animType: AnimType.topSlide,
+      title: 'Download',
+      desc: 'Are you sure you want to reload?',
+      btnOkOnPress: () async{
+        await playMusicPageProvider.databaseHelper.delete(song.id);
+        setState(() {
+
+          userPageProvider.allSongDatabase.remove(song);
+
+          List<Song> listSongTemp = userPageProvider.allSongDatabase;
+
+          print("LENGTH ------> ${listSongTemp.length}");
+
+          downloadProvider.setDownloadCompleted(true);
+
+          if(listSongTemp.isEmpty) {
+            audioPlayerProvider.audioHelper.player.pause();
+          }
+
+          audioPlayerProvider.audioHelper.initAudio(audioPlayerProvider.initListSongForPlayerController(listSongTemp));
+
+          deleteFile(song.preview);
+
+        });
+      },
+      btnCancelOnPress: () {
+        print("CANCEL ------> ${song.id}");
+      } ,
+    ).show();
+  }
+
+  void deleteFile(String path) {
+    final file = File(path);
+    if (file.existsSync()) {
+      file.deleteSync();
+      print('File $path deleted successfully.');
+    } else {
+      print('File $path does not exist.');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -99,32 +147,24 @@ class _DownloadPlayListPageState extends State<DownloadPlayListPage> with Widget
                 color: const Color.fromRGBO(26, 27, 31, 1.0),
                 child: Stack(
                   children: [
-                    Image.network(
-                      "https://cdn-amz.woka.io/images/I/51tm0Q-BH+L.jpg",
-                      width:MediaQuery.of(context).size.width,
+                    CachedNetworkImage(
+                      imageUrl: "https://cdn-amz.woka.io/images/I/51tm0Q-BH+L.jpg",
                       height: 400,
+                      width: MediaQuery.of(context).size.width,
                       fit: BoxFit.fill,
+                      errorWidget: (context, url, error) => const Icon(Icons.error),
                     ),
                     Positioned(
                       bottom: 10,
                       right: 20,
-                      child: ControlButton(player: audioPlayerProvider.audioHelper.player),
+                      child: userPageProvider.allSongDatabase!.isEmpty ? const SizedBox() : ControlButton(player: audioPlayerProvider.audioHelper.player),
                     ),
                     Positioned(
-                      bottom: 60,
+                      bottom: 80,
                       left: 20,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: const [
-                          Text(
-                            "TODAY'S",
-                            style: TextStyle(
-                                fontFamily: "Lon",
-                                fontSize: 30,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600
-                            ),
-                          ),
                           Text(
                             "Download",
                             style: TextStyle(
@@ -152,86 +192,9 @@ class _DownloadPlayListPageState extends State<DownloadPlayListPage> with Widget
                               color: Colors.white,
                             ),
                           ),
-                          Row(
-                            children:[
-                              GestureDetector(
-                                onTap: (){
-                                  setState(() {
-                                    favoritePlayList = !favoritePlayList;
-                                  });
-                                },
-                                child: Icon(
-                                  favoritePlayList ? Icons.favorite : Icons.favorite_border_outlined,
-                                  color: favoritePlayList ? const Color.fromRGBO(39, 183, 90, 1.0) : Colors.white,
-                                  size: 30,
-                                ),
-                              ),
-                              Container(
-                                margin: const EdgeInsets.only(left: 20),
-                                child: const Icon(
-                                  Icons.more_vert,
-                                  color: Colors.white,
-                                  size: 30,
-                                ),
-                              )
-                            ],
-                          )
                         ],
                       ),
                     ),
-                    Positioned(
-                      bottom: 20,
-                      left: 20,
-                      child: Row(
-                        children: [
-                          Row(
-                            children: const [
-                              Icon(
-                                Icons.favorite,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                              SizedBox(width: 5,),
-                              Text(
-                                "35,498,726",
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12
-                                ),
-                              ),
-                              SizedBox(width: 5,),
-                              Text(
-                                "likes",
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12
-                                ),
-                              )
-                            ],
-                          ),
-                          Container(
-                            margin: const EdgeInsets.only(left: 20),
-                            child: Row(
-                              children: const [
-                                Icon(
-                                  Icons.watch_later,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                                SizedBox(width: 5,),
-                                Text(
-                                  "2h 36min",
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        ],
-                      ),
-                    )
                   ],
                 ),
               ),
@@ -242,7 +205,7 @@ class _DownloadPlayListPageState extends State<DownloadPlayListPage> with Widget
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        "Featuring",
+                        "Local Song",
                         style: TextStyle(
                             color: Colors.white,
                             fontSize: 15,
@@ -359,27 +322,17 @@ class _DownloadPlayListPageState extends State<DownloadPlayListPage> with Widget
                                             children: [
                                               GestureDetector(
                                                 onTap: (){
-                                                  setState(() {
-                                                    check = listFavorite.contains(index);
-                                                    if(check) {
-                                                      listFavorite.remove(index);
-                                                    } else {
-                                                      listFavorite.add(index);
-                                                    }
-                                                  });
+                                                  showDialog(userPageProvider.allSongDatabase![index]);
                                                 },
-                                                child: Icon(
-                                                  listFavorite.contains(index) ? Icons.favorite : Icons.favorite_border_outlined,
-                                                  color: listFavorite.contains(index) ? const Color.fromRGBO(39, 183, 90, 1.0) : Colors.white,
+                                                child: Container(
+                                                  margin: const EdgeInsets.only(right: 20),
+                                                  child: const Icon(
+                                                    Icons.delete_forever,
+                                                    color: Colors.white,
+                                                    size: 20,
+                                                  ),
                                                 ),
                                               ),
-                                              Container(
-                                                margin: const EdgeInsets.only(left: 20,right: 20),
-                                                child: const Icon(
-                                                  Icons.more_vert,
-                                                  color: Colors.white,
-                                                ),
-                                              )
                                             ],
                                           )
                                         ],

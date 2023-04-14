@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:music_app/provider/home_page_provider.dart';
 import 'package:provider/provider.dart';
@@ -71,10 +72,12 @@ class _SearchPageState extends State<SearchPage> {
                                       },
                                       child: ClipRRect(
                                         borderRadius: BorderRadius.circular(70),
-                                        child: Image.network(
-                                          homePageProvider.listDataSong[index].image,
-                                          width: 70,
+                                        child: CachedNetworkImage(
+                                          imageUrl: homePageProvider.listDataSong[index].image,
                                           height: 70,
+                                          width: 70,
+                                          fit: BoxFit.fill,
+                                          errorWidget: (context, url, error) => const Icon(Icons.error),
                                         ),
                                       ),
                                     ),

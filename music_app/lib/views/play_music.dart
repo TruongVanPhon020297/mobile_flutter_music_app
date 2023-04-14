@@ -263,7 +263,7 @@ class PlayMusicControl extends StatelessWidget {
                                           );
 
                                           (() async {
-                                            downloadProvider.setDownloadCompleted(await playMusicPageProvider.databaseHelper.insertTrack(songSaveDatabase));
+                                            downloadProvider.setDownloadCompleted(await playMusicPageProvider.databaseHelper.insertSong(songSaveDatabase));
 
                                             print("BOOL     -----------> ");
 
@@ -336,7 +336,7 @@ class PlayMusicControl extends StatelessWidget {
                           bufferedPosition:
                           positionData?.bufferedPosition ?? Duration.zero,
                           onChangeEnd: (newPosition) {
-                            audioPlayerProvider.audioPlayer!.seek(newPosition);
+                            audioPlayerProvider.audioHelper.player!.seek(newPosition);
                           },
                         );
                       },
@@ -373,11 +373,12 @@ class PlayMusicControl extends StatelessWidget {
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(10),
-                                child: Image.network(
-                                  "https://f4.bcbits.com/img/0016073391_10.jpg",
-                                  width: 50,
+                                child: CachedNetworkImage(
+                                  imageUrl: "https://f4.bcbits.com/img/0016073391_10.jpg",
                                   height: 50,
+                                  width: 50,
                                   fit: BoxFit.fill,
+                                  errorWidget: (context, url, error) => const Icon(Icons.error),
                                 ),
                               ),
                               Container(

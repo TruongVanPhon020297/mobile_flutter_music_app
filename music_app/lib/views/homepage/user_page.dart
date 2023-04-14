@@ -181,6 +181,10 @@ class GenrePage extends StatelessWidget {
 
                             userPageProvider.setAllSongDatabase(snapshot.data!);
 
+                            List<int> listSongId = snapshot.data!.map((e) => e.id).toList();
+
+                            userPageProvider.setListIdSongDatabase(listSongId);
+
                             return Text(
                                 "${userPageProvider.allSongDatabase.length}",
                                 style: const TextStyle(

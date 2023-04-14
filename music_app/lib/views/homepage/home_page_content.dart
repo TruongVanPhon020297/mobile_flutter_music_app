@@ -100,11 +100,13 @@ class MadeForYouPage extends StatelessWidget {
                           },
                           child: ClipRRect(
                             borderRadius: const BorderRadius.all(Radius.circular(10)),
-                            child: Image.network(
-                              homePageProvider.dataWithMadeForYou[index].pictureMedium,
+                            child:
+                            CachedNetworkImage(
+                              imageUrl: homePageProvider.dataWithMadeForYou[index].pictureMedium,
                               height: 200,
                               fit: BoxFit.fill,
-                            ),
+                              errorWidget: (context, url, error) => const Icon(Icons.error),
+                            )
                           ),
                         ),
                         Positioned(
@@ -239,11 +241,12 @@ class ArtistPage extends StatelessWidget {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(70),
-                          child: Image.network(
-                            homePageProvider.listArtist[index].image,
-                            width: 70,
+                          child: CachedNetworkImage(
+                            imageUrl: homePageProvider.listArtist[index].image,
                             height: 70,
+                            width: 70,
                             fit: BoxFit.fill,
+                            errorWidget: (context, url, error) => const Icon(Icons.error),
                           ),
                         ),
                         const SizedBox(height: 10,),

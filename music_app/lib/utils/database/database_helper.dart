@@ -17,7 +17,7 @@ class DatabaseHelper {
     );
   }
 
-  Future<bool> insertTrack(Song song) async {
+  Future<bool> insertSong(Song song) async {
     final db = await DatabaseHelper.db();
     await db.insert(
       'songs',
@@ -29,6 +29,15 @@ class DatabaseHelper {
 
     return true;
 
+  }
+
+  Future<void> delete(int id) async {
+
+    final db = await DatabaseHelper.db();
+
+    await db.delete("songs", where: 'id = ?', whereArgs: [id]);
+
+    print("DELETE SUCCESS --------------->");
   }
 
   Future<List<Song>> getAllSongDatabase() async {

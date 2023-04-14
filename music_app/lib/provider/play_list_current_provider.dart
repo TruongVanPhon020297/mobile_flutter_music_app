@@ -5,7 +5,7 @@ import '../model/song.dart';
 
 class PlayListCurrentProvider extends ChangeNotifier {
 
-  int? playListCurrentId;
+  int playListCurrentId = -1;
 
   List<Song>? listSongCurrent;
 

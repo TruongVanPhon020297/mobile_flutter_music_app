@@ -45,6 +45,7 @@ dependencies:
   flutter_downloader: ^1.10.2
   permission_handler: ^10.2.0
   fluttertoast: ^8.2.1
+  awesome_dialog: ^3.0.2
 
 
 dev_dependencies:

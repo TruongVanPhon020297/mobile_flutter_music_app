@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:just_audio/just_audio.dart';
@@ -66,11 +67,12 @@ class NavigatorBottom extends StatelessWidget {
                                         ),
                                         child: Hero(
                                           tag: 'ssss',
-                                          child: Image.network(
-                                            audioPlayerProvider.listSongPlay![snapshot.data!.currentIndex].pictureSmall,
-                                            width: 50,
+                                          child: CachedNetworkImage(
+                                            imageUrl: audioPlayerProvider.listSongPlay![snapshot.data!.currentIndex].pictureSmall,
                                             height: 50,
+                                            width: 50,
                                             fit: BoxFit.fill,
+                                            errorWidget: (context, url, error) => const Icon(Icons.error),
                                           ),
                                         ),
                                       ),

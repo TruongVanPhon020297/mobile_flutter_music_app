@@ -36,14 +36,11 @@ class AudioPlayerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-
-  initPlayerController(String url) async{
+  initListSongForPlayerController(List<Song> listSongPlay){
 
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.black,
     ));
-
-    List<Song> listSongPlay = await getAllSongByGenre(url);
 
     return ConcatenatingAudioSource(children: [
       ...listSongPlay.map((e) => AudioSource.uri(

@@ -8,8 +8,14 @@ class UserPageProvider extends ChangeNotifier {
 
   List<Song> allSongDatabase = [];
 
+  List<int> listIdSongDatabase = [];
+
   void setAllSongDatabase(List<Song> list) {
     allSongDatabase = list;
+  }
+
+  void setListIdSongDatabase(List<int> list) {
+    listIdSongDatabase = list;
   }
 
   Future<List<Song>> getAllSongDatabase() async {
