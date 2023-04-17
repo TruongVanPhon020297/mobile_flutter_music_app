@@ -4,6 +4,7 @@ import 'package:just_audio_background/just_audio_background.dart';
 import 'package:music_app/provider/audio_player_provider.dart';
 import 'package:music_app/provider/download_provider.dart';
 import 'package:music_app/provider/home_page_provider.dart';
+import 'package:music_app/provider/music_chart_page_provider.dart';
 import 'package:music_app/provider/play_list_current_provider.dart';
 import 'package:music_app/provider/play_list_page_provider.dart';
 import 'package:music_app/provider/play_music_page_provider.dart';
@@ -54,6 +55,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (context) => UserPageProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => MusicChartPageProvider(),
         )
       ],
       child: MaterialApp(
